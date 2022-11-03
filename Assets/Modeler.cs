@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,13 +9,29 @@ public class Modeler : MonoBehaviour {
 
     void Start() {
         recentObjects = new List<GameObject>();
+        CustomEquation("+^x2^y2=^z2", 1, 2, 3);
     }
     public void SimulateCallback(int num) {
         lastCoroutine = StartCoroutine(SimulateEquation(num));
     }
+
+    public bool CustomEquation(string equation, float x, float y, float z) {
+        string leftSide = equation.Split('=')[0].Replace(" ", "");
+        string rightSide = equation.Split('=')[1].Replace(" ", "");
+
+        //Vector2 a = SolveArithmetics(leftSide, x, y, z);
+        //Vector2 b = SolveArithmetics(rightSide, x, y, z);
+
+        //if (Similar(a.x, b.x)) {
+        //    return true;
+        //}
+
+        return false;
+    }
+
     //if the left side and right side are roughly equal, plot the point
     bool Similar(float a, float b) {
-        return Mathf.Abs(a - b) < 0.05f; //add function where the closer a function gets, approximate smaller
+        return Mathf.Abs(a - b) < 0.03f; //add function where the closer a function gets, approximate smaller
     }
     bool CheckQuadrics(int equationNum, float x, float y, float z) {
         switch (equationNum) {
@@ -50,7 +67,7 @@ public class Modeler : MonoBehaviour {
     }
     bool EllipticCone(float x, float z, float y) {
         //z^2=x^2+y^2
-        if (Similar(Mathf.Pow(x, 2) + Mathf.Pow(y, 2), Mathf.Pow(z, 2))) {
+        if (Similar(Mathf.Sin(Mathf.Pow(x, 2)) + Mathf.Pow(y, 2), Mathf.Pow(z, 2))) {
             return true;
         }
         return false;
