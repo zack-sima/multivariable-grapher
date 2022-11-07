@@ -2,16 +2,22 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Numerics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(MeshFilter))]
 public class Modeler : MonoBehaviour {
     public GameObject cube;
     public TMP_InputField equationInput;
     private List<GameObject> recentObjects;
+    Mesh mesh;
 
     void Start() {
+        mesh = new Mesh();
+        GetComponent<MeshFilter>().mesh = mesh;
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         recentObjects = new List<GameObject>();
     }
     void Update() {
@@ -96,6 +102,11 @@ public class Modeler : MonoBehaviour {
 
     Coroutine lastCoroutine = null;
 
+    List<UnityEngine.Vector3> points = new List<UnityEngine.Vector3>();
+    List<int> indices = new List<int>();
+    int count;
+    public float bound = 1.5f;
+    public float spacing = 0.05f;
     IEnumerator SimulateCustomEquation(string equationInput) {
         if (lastCoroutine != null) {
             StopCoroutine(lastCoroutine);
@@ -104,6 +115,8 @@ public class Modeler : MonoBehaviour {
             Destroy(g);
         }
         recentObjects = new List<GameObject>();
+        points.Clear();
+        indices.Clear();
 
         string leftSide = equationInput.Split('=')[0].Replace(" ", "");
         string rightSide = equationInput.Split('=')[1].Replace(" ", "");
@@ -111,18 +124,21 @@ public class Modeler : MonoBehaviour {
         EquationParser.Operator leftModel = new EquationParser.Operator(EquationParser.ConvertStringToListedEquation(leftSide));
         EquationParser.Operator rightModel = new EquationParser.Operator(EquationParser.ConvertStringToListedEquation(rightSide));
 
-        float bound = 1.5f;
-        float spacing = 0.05f;
+        count = 0;
         for (float i = -bound; i < bound; i += spacing) {
             for (float j = -bound; j < bound; j += spacing) {
                 for (float k = -bound; k < bound; k += spacing) {
                     if (Similar(leftModel.Evaluate(i, k, j), rightModel.Evaluate(i, k, j))) {
-                        recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
+                        points.Add(new UnityEngine.Vector3(i, j, k));
+                        indices.Add(count);
+                        count++;
+                        //recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
                     }
                 }
             }
             yield return null;
         }
+        CreateMesh();
     }
     IEnumerator SimulateEquation(int num) {
         if (lastCoroutine != null) {
@@ -132,20 +148,45 @@ public class Modeler : MonoBehaviour {
             Destroy(g);
         }
         recentObjects = new List<GameObject>();
+        points.Clear();
+        indices.Clear();
 
-        float bound = 1.5f;
-        float spacing = 0.05f;
+        count = 0;
         for (float i = -bound; i < bound; i += spacing) {
             for (float j = -bound; j < bound; j += spacing) {
                 for (float k = -bound; k < bound; k += spacing) {
                     if (CheckQuadrics(num, i, j, k)) {
-                        recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
+                        points.Add(new UnityEngine.Vector3(i, j, k));
+                        indices.Add(count);
+                        count++;
+                        //recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
                     }
                 }
             }
             yield return null;
         }
+        CreateMesh();
         //yield return null;
     }
-    
+
+    List<Color> colors = new List<Color>();
+    float magnitude;
+    public Gradient gradient;
+    public void CreateMesh()
+    {
+        mesh.Clear();
+        colors.Clear();
+        mesh.vertices = points.ToArray();
+        print(points.Capacity);
+        print(mesh.vertexCount);
+        for (int i = 0; i < mesh.vertexCount; i++)
+        {
+            magnitude = points[i].magnitude;
+            //colors.Add(gradient.Evaluate(magnitude / 2.598f));
+            colors.Add(new Color((magnitude / 2.598f), (1 - (magnitude / 2.598f)), 0));
+        }
+        mesh.colors = colors.ToArray();
+        mesh.SetIndices(indices.ToArray(), MeshTopology.Points, 0);
+    }
+
 }
