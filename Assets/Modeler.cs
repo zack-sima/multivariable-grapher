@@ -172,6 +172,7 @@ public class Modeler : MonoBehaviour {
     List<Color> colors = new List<Color>();
     float magnitude;
     public Gradient gradient;
+    float value;
     public void CreateMesh()
     {
         mesh.Clear();
@@ -182,8 +183,10 @@ public class Modeler : MonoBehaviour {
         for (int i = 0; i < mesh.vertexCount; i++)
         {
             magnitude = points[i].magnitude;
+            value = (float)Math.Sqrt(3 * MathF.Pow(bound,2))/2;
             //colors.Add(gradient.Evaluate(magnitude / 2.598f));
-            colors.Add(new Color((magnitude / 2.598f), (1 - (magnitude / 2.598f)), 0));
+            colors.Add(new Color((float)Math.Sqrt((points[i][0] / bound + 1) / 2), (float)Math.Sqrt((points[i][1] / bound + 1) / 2), (float)Math.Sqrt((points[i][2] / bound + 1) / 2)));
+            //colors.Add(new Color((magnitude / value)/1.5f, (1 - (magnitude / value))/1.5f, MathF.Sqrt((points[i][1]/bound+1)/2)));
         }
         mesh.colors = colors.ToArray();
         mesh.SetIndices(indices.ToArray(), MeshTopology.Points, 0);
