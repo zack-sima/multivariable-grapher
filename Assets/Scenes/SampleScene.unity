@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657815, g: 0.49641192, b: 0.57481617, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657838, g: 0.49641234, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -427,7 +427,7 @@ MonoBehaviour:
   cube: {fileID: 7249636688300662089, guid: 04da6a0c3588442f4baca2c251826ead, type: 3}
   equationInput: {fileID: 1554046211}
   bound: 1.5
-  spacing: 0.05
+  spacing: 0.035
   gradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}

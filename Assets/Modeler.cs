@@ -163,10 +163,10 @@ public class Modeler : MonoBehaviour {
                     }
                 }
             }
-            yield return null;
+            //yield return null;
         }
         CreateMesh();
-        //yield return null;
+        yield return null;
     }
 
     List<Color> colors = new List<Color>();

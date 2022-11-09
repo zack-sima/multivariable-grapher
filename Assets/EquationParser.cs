@@ -5,20 +5,22 @@ using System.Linq.Expressions;
 using UnityEngine;
 
 public class EquationParser : MonoBehaviour {
-    public static List<string> operationSymbols = new List<string>() { "+", "-", "*", "/", "^" };
-    public static List<string> allSymbols = new List<string>() { "+", "-", "*", "/", "^", "(", ")", "x", "y", "z", "e", "π" };
+    public static List<string> operationSymbols = new List<string>() { "+", "-", "*", "/", "^", "$" }; //$=trig/other function
+    public static List<string> allSymbols = new List<string>() { "+", "-", "*", "/", "^", "$", "(", ")", "x", "y", "z", "e", "π" };
+    public static List<string> functionSymbols = new List<string>() { "sin", "cos", "tan", "ln" };
 
     void Start() {
-        //string inputString = "e^x+e^y";
-        //float x = 1, y = 1, z = 1;
+        string inputString = "e^x+e^y";
+        float x = 1, y = 1, z = 1;
 
-        //List<string> expression = ConvertStringToListedEquation(inputString);
+        List<string> expression = ConvertStringToListedEquation(inputString);
 
-        //Operator model = new Operator(expression);
-        //print(model.Evaluate(x, y, z));
+        Operator model = new Operator(expression);
+        print(model.Evaluate(x, y, z));
     }
     public static List<string> ConvertStringToListedEquation(string inputString) {
         int numStartIndex = 0;
+        int functionStartIndex = 0;
         int index = 0;
 
         List<string> exp = new List<string>();
@@ -26,7 +28,16 @@ public class EquationParser : MonoBehaviour {
             if (allSymbols.Contains(c.ToString())) {
                 exp.Add(c.ToString());
                 numStartIndex = index + 1;
+                functionStartIndex = index + 1;
+            } else if (functionSymbols.Contains(c.ToString())) {
+                if (inputString[index + 1] == '$') {
+                    //add function
+                    exp.Add(inputString.Substring(functionStartIndex, index + 1 - functionStartIndex));
+                }
+                numStartIndex = index + 1;
+                functionStartIndex = index + 1;
             } else { //should be a number
+                functionStartIndex = index + 1;
                 if (index == inputString.Length - 1 || allSymbols.Contains(inputString[index + 1].ToString())) {
                     //substring is different from python
                     exp.Add(inputString.Substring(numStartIndex, index + 1 - numStartIndex));
@@ -36,6 +47,7 @@ public class EquationParser : MonoBehaviour {
             }
             index++;
         }
+        print(string.Join("", exp));
         return CorrectExpression(exp);
     }
 
@@ -62,6 +74,8 @@ public class EquationParser : MonoBehaviour {
     public class Operator {
         public string value;
 
+        public bool isFunction;
+
         public string operation;
         public Operator left;
         public Operator right;
@@ -72,6 +86,11 @@ public class EquationParser : MonoBehaviour {
             if (expression.Count == 1) {
                 //a number
                 this.value = expression[0];
+
+                //function
+                if (functionSymbols.Contains(expression[0])) {
+                    this.isFunction = true; //prevents evaluate() from getting called
+                }
             } else {
                 foreach (string s in expression) {
                     if (s == "(") {
@@ -93,7 +112,7 @@ public class EquationParser : MonoBehaviour {
                     index++;
                 }
             }
-            print(string.Join(", ", expression));
+            //print(string.Join(", ", expression));
         }
         public float Evaluate(float x, float y, float z) {
             //if it is a constant value
@@ -120,24 +139,42 @@ public class EquationParser : MonoBehaviour {
                 print("null");
             if (this.right == null)
                 print("null");
-            float left = this.left.Evaluate(x, y, z);
-            float right = this.right.Evaluate(x, y, z);
 
-            //operations
-            switch (this.operation) {
-                case "+":
-                    return left + right;
-                case "-":
-                    return left - right;
-                case "*":
-                    return left * right;
-                case "/":
-                    return left / right;
-                case "^":
-                    return Mathf.Pow(left, right);
-                default:
-                    Debug.LogWarning("operation not known: " + this.operation);
-                    return 0;
+            float right = this.right.Evaluate(x, y, z);
+            if (this.left.isFunction) {
+                //evaluate function
+                switch (this.left.value) {
+                    case "sin":
+                        return Mathf.Sin(right);
+                    case "cos":
+                        return Mathf.Cos(right);
+                    case "tan":
+                        return Mathf.Tan(right);
+                    case "ln":
+                        return Mathf.Log(right);
+                    default:
+                        Debug.LogWarning("function not known: " + this.left.value);
+                        return 0;
+                }
+            } else {
+                float left = this.left.Evaluate(x, y, z);
+
+                //operations
+                switch (this.operation) {
+                    case "+":
+                        return left + right;
+                    case "-":
+                        return left - right;
+                    case "*":
+                        return left * right;
+                    case "/":
+                        return left / right;
+                    case "^":
+                        return Mathf.Pow(left, right);
+                    default:
+                        Debug.LogWarning("operation not known: " + this.operation);
+                        return 0;
+                }
             }
         }
     }
@@ -145,9 +182,13 @@ public class EquationParser : MonoBehaviour {
         //add multiplication sign to two adjacent non-symbols
         int index = 0;
         while (index < exp.Count - 1) {
-            List<string> leftSymbols = new List<string>() { "+", "-", "*", "/", "^", "(" };
-            List<string> rightSymbols = new List<string>() { "+", "-", "*", "/", "^", ")" };
-            if (!leftSymbols.Contains(exp[index]) && !rightSymbols.Contains(exp[index + 1])) {
+            List<string> leftSymbols = new List<string>() { "+", "-", "*", "/", "^", "(", "$" };
+            List<string> rightSymbols = new List<string>() { "+", "-", "*", "/", "^", ")", "$" };
+
+            if (functionSymbols.Contains(exp[index]) && exp[index + 1] == "(") {
+                //functions
+                exp = new List<string>(exp.Take(index + 1).Concat(new List<string>() { "$" }).Concat(exp.Skip(index + 1)));
+            } else if (!leftSymbols.Contains(exp[index]) && !rightSymbols.Contains(exp[index + 1])) {
                 exp = new List<string>(exp.Take(index + 1).Concat(new List<string>() { "*" }).Concat(exp.Skip(index + 1)));
             }
             index++;
@@ -220,6 +261,7 @@ public class EquationParser : MonoBehaviour {
                         }
                     }
                 }
+                //functions don't need to be separated since they're assumed to have brackets
 
                 //reset index and start over again
                 index = 0;
