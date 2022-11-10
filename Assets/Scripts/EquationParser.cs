@@ -8,7 +8,7 @@ using UnityEngine;
 public class EquationParser : MonoBehaviour {
     public static List<string> operationSymbols = new List<string>() { "+", "-", "*", "/", "^", "$" }; //$=trig/other function
     public static List<string> allSymbols = new List<string>() { "+", "-", "*", "/", "^", "$", "(", ")", "x", "y", "z", "e", "π" };
-    public static List<string> functionSymbols = new List<string>() { "sin", "cos", "tan", "ln", "abs", "asin", "arcsin", "acos", "arccos", "atan", "arctan" };
+    public static List<string> functionSymbols = new List<string>() { "sin", "cos", "tan", "ln", "abs", "asin", "arcsin", "acos", "arccos", "atan", "arctan", "sign" };
 
     void Start() {
         string inputString = "e^x+e^y";
@@ -164,6 +164,8 @@ public class EquationParser : MonoBehaviour {
                     case "atan":
                     case "arctan":
                         return Mathf.Atan(right);
+                    case "sign":
+                        return Mathf.Sign(right);
                     default:
                         Debug.LogWarning("function not known: " + this.left.value);
                         return 0;
