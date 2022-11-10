@@ -1,4 +1,4 @@
-# Multivariable Grapher, AKA "freematica" (no more $300 per year subscription fees!)
+# Multivariable Grapher, AKA "freematica" (no more yearly Mathematica subscription fees!)
 
 A current project with @Eric Brewster to replace the clunky online interfaces for graphing 3d equations. Supports implicit graphing. The program works by approximating the left and right sides of an equation (substituting x, y, and z values) until they are roughly equivalent, and deciphers the equations using a custom-built equation parser with a linked-list-like structure.
 
