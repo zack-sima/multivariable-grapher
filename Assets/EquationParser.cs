@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using UnityEngine;
 public class EquationParser : MonoBehaviour {
     public static List<string> operationSymbols = new List<string>() { "+", "-", "*", "/", "^", "$" }; //$=trig/other function
     public static List<string> allSymbols = new List<string>() { "+", "-", "*", "/", "^", "$", "(", ")", "x", "y", "z", "e", "π" };
-    public static List<string> functionSymbols = new List<string>() { "sin", "cos", "tan", "ln" };
+    public static List<string> functionSymbols = new List<string>() { "sin", "cos", "tan", "ln", "abs", "asin", "arcsin", "acos", "arccos", "atan", "arctan" };
 
     void Start() {
         string inputString = "e^x+e^y";
@@ -152,6 +153,17 @@ public class EquationParser : MonoBehaviour {
                         return Mathf.Tan(right);
                     case "ln":
                         return Mathf.Log(right);
+                    case "abs":
+                        return Mathf.Abs(right);
+                    case "asin":
+                    case "arcsin":
+                        return Mathf.Asin(right);
+                    case "acos":
+                    case "arccos":
+                        return Mathf.Acos(right);
+                    case "atan":
+                    case "arctan":
+                        return Mathf.Atan(right);
                     default:
                         Debug.LogWarning("function not known: " + this.left.value);
                         return 0;

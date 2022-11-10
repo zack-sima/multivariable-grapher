@@ -57,7 +57,11 @@ Shader "Point Cloud/Point"
             #if _COMPUTE_BUFFER
                 float4 pt = _PointBuffer[vid];
                 float4 pos = mul(_Transform, float4(pt.xyz, 1));
-                half3 col = PcxDecodeColor(asuint(pt.w));
+                half r = (data      ) & 0xff;
+                half g = (data >>  8) & 0xff;
+                half b = (data >> 16) & 0xff;
+                half a = (data >> 24) & 0xff;
+                half3 col = half3(r, g, b) * a * 16 / (255 * 255);
             #else
                 float4 pos = input.position;
                 half3 col = input.color;
