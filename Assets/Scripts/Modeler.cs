@@ -7,12 +7,17 @@ using UnityEngine.UI;
 
 [RequireComponent(typeof(MeshFilter))]
 public class Modeler : MonoBehaviour {
+    //NOTE: cube is temporary fallback for iOS
     public GameObject cube;
+
     public TMP_InputField equationInput;
     public Slider spacingSlider, scaleSlider;
     public Text spacingText, scaleText;
+    public TMP_Text progressText;
 
-    MeshRenderer r;
+    bool handHeld;
+
+    //MeshRenderer r;
 
     private List<GameObject> recentObjects;
     Mesh mesh;
@@ -21,9 +26,17 @@ public class Modeler : MonoBehaviour {
 
     //Spacing cannot be allowed to be too small if scale is big
     public void ChangeSpacingValues() {
-        spacingSlider.minValue = Mathf.Pow(scaleSlider.value, 2) / 100f;
-        spacingSlider.maxValue = Mathf.Pow(scaleSlider.value, 2) / 30f;
-        spacingSlider.value = Mathf.Clamp(spacingSlider.value, spacingSlider.minValue, spacingSlider.maxValue);
+        float originalPercentage = spacingSlider.value / spacingSlider.maxValue;
+
+        if (handHeld) {
+            spacingSlider.minValue = Mathf.Pow(scaleSlider.value, 2) / 50f;
+            spacingSlider.maxValue = Mathf.Pow(scaleSlider.value, 2) / 15f;
+            spacingSlider.value = originalPercentage * spacingSlider.maxValue;
+        } else {
+            spacingSlider.minValue = Mathf.Pow(scaleSlider.value, 2) / 100f;
+            spacingSlider.maxValue = Mathf.Pow(scaleSlider.value, 2) / 30f;
+            spacingSlider.value = originalPercentage * spacingSlider.maxValue;
+        }
     }
     void Update() {
         spacingText.text = "Model Spacing: " + spacingSlider.value.ToString("0.###");
@@ -35,10 +48,16 @@ public class Modeler : MonoBehaviour {
         //r.material.shader.get
     }
     void Start() {
-        mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
-        r = GetComponent<MeshRenderer>();
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        Application.targetFrameRate = 60;
+
+        handHeld = true; // SystemInfo.deviceType == DeviceType.Handheld;
+
+        if (!handHeld) {
+            mesh = new Mesh();
+            GetComponent<MeshFilter>().mesh = mesh;
+            //r = GetComponent<MeshRenderer>();
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        }
         recentObjects = new List<GameObject>();
 
         ChangeSpacingValues();
@@ -67,12 +86,11 @@ public class Modeler : MonoBehaviour {
                 break;
         }
         CustomEquation();
-        //lastCoroutine = StartCoroutine(SimulateEquation(num));
     }
 
     public void CustomEquation() {
         if (equationInput.text.Contains('=')) {
-            StartCoroutine(SimulateCustomEquation(equationInput.text));
+            lastCoroutine = StartCoroutine(SimulateCustomEquation(equationInput.text.ToLower()));
         }
     }
 
@@ -80,78 +98,23 @@ public class Modeler : MonoBehaviour {
     bool Similar(float a, float b) {
         return Mathf.Abs(a - b) < tolerance; //add function where the closer a function gets, approximate smaller
     }
-    bool CheckQuadrics(int equationNum, float x, float y, float z) {
-        switch (equationNum) {
-            case 0:
-                return EllipticParaboloid(x, y, z);
-            case 1:
-                return EllipticCone(x, y, z);
-            case 2:
-                return HyperbolicParaboloid(x, y, z);
-            case 3:
-                return Ellipsoid(x, y, z);
-            case 4:
-                return OneSheetHyperboloid(x, y, z);
-            case 5:
-                return TwoSheetsHyperboloid(x, y, z);
-            default:
-                return false;
-        }
-    }
-    bool EllipticParaboloid(float x, float z, float y) {
-        //z=x^2+y^2
-        if (Similar(Mathf.Pow(x, 2) + Mathf.Pow(y, 2), z)) {
-            return true;
-        }
-        return false;
-    }
-    bool HyperbolicParaboloid(float x, float z, float y) {
-        //z=x^2-y^2
-        if (Similar(Mathf.Pow(x, 2) - Mathf.Pow(y, 2), z)) {
-            return true;
-        }
-        return false;
-    }
-    bool EllipticCone(float x, float z, float y) {
-        //z^2=x^2+y^2
-        if (Similar(Mathf.Pow(x, 2) + Mathf.Pow(y, 2), Mathf.Pow(z, 2))) {
-            return true;
-        }
-        return false;
-    }
-    bool Ellipsoid(float x, float z, float y) {
-        //x^2+y^2+z^2=1
-        if (Similar(Mathf.Pow(x, 2) + Mathf.Pow(y, 2) + Mathf.Pow(z, 2), 1)) {
-            return true;
-        }
-        return false;
-    }
-    bool OneSheetHyperboloid(float x, float z, float y) {
-        //x^2+y^2-z^2=1
-        if (Similar(Mathf.Pow(x, 2) + Mathf.Pow(y, 2) - Mathf.Pow(z, 2), 1)) {
-            return true;
-        }
-        return false;
-    }
-    bool TwoSheetsHyperboloid(float x, float z, float y) {
-        //x^2-y^2-z^2=1
-        if (Similar(Mathf.Pow(x, 2) - Mathf.Pow(y, 2) - Mathf.Pow(z, 2), 1)) {
-            return true;
-        }
-        return false;
-    }
-
 
     Coroutine lastCoroutine = null;
 
-    List<UnityEngine.Vector3> points = new List<UnityEngine.Vector3>();
+    List<Vector3> points = new List<Vector3>();
     List<int> indices = new List<int>();
     int count;
 
     public float bound = 1.5f;
     public float spacing = 0.05f;
 
+    List<GameObject> lastCubes = new List<GameObject>();
     IEnumerator SimulateCustomEquation(string equationInput) {
+        foreach (GameObject g in lastCubes) {
+            if (g != null) Destroy(g);
+        }
+        lastCubes = new List<GameObject>();
+
         if (lastCoroutine != null) {
             StopCoroutine(lastCoroutine);
         }
@@ -169,48 +132,41 @@ public class Modeler : MonoBehaviour {
         EquationParser.Operator rightModel = new EquationParser.Operator(EquationParser.ConvertStringToListedEquation(rightSide));
 
         count = 0;
-        for (float i = -bound; i < bound; i += spacing) {
-            for (float j = -bound; j < bound; j += spacing) {
-                for (float k = -bound; k < bound; k += spacing) {
-                    if (Similar(leftModel.Evaluate(i, k, j), rightModel.Evaluate(i, k, j))) {
-                        points.Add(new UnityEngine.Vector3(i, j, k));
-                        indices.Add(count);
-                        count++;
-                        //recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
-                    }
-                }
-            }
-            //yield return null;
-        }
-        CreateMesh();
-        yield return null;
-    }
-    IEnumerator SimulateEquation(int num) {
-        if (lastCoroutine != null) {
-            StopCoroutine(lastCoroutine);
-        }
-        foreach (GameObject g in recentObjects) {
-            Destroy(g);
-        }
-        recentObjects = new List<GameObject>();
-        points.Clear();
-        indices.Clear();
+        int index = 0;
 
-        count = 0;
-        for (float i = -bound; i < bound; i += spacing) {
-            for (float j = -bound; j < bound; j += spacing) {
-                for (float k = -bound; k < bound; k += spacing) {
-                    if (CheckQuadrics(num, i, j, k)) {
-                        points.Add(new UnityEngine.Vector3(i, j, k));
-                        indices.Add(count);
+        float spacingMin = spacing * 0.7f;
+        float spacingMax = spacing * 1.25f;
+
+        cube.transform.localScale = new Vector3(spacing, spacing, spacing);
+
+        for (float i = -bound; i < bound; i += UnityEngine.Random.Range(spacingMin, spacingMax)) {
+            for (float j = -bound; j < bound; j += UnityEngine.Random.Range(spacingMin, spacingMax)) {
+                for (float k = -bound; k < bound; k += UnityEngine.Random.Range(spacingMin, spacingMax)) {
+                    if (Similar(leftModel.Evaluate(i, k, j), rightModel.Evaluate(i, k, j))) {
+                        if (handHeld) {
+                            SpawnCube(new Vector3(i, j, k));
+                        } else {
+                            points.Add(new Vector3(i, j, k));
+                            indices.Add(count);
+                        }
                         count++;
                         //recentObjects.Add(Instantiate(cube, new Vector3(i, j, k), Quaternion.identity));
                     }
                 }
             }
-            //yield return null;
+            progressText.text = ((int)((i + bound) / (bound * 2) * 100)).ToString() + "%";
+
+            //note: iOS doesn't support Eric's shader rn for some reason
+            if (!handHeld) {
+                CreateMesh();
+            }
+
+            if (index % 2 == 0)
+                yield return null;
+
+            index++;
         }
-        CreateMesh();
+        progressText.text = "100%";
         yield return null;
     }
 
@@ -218,17 +174,23 @@ public class Modeler : MonoBehaviour {
     float magnitude;
     public Gradient gradient;
     float value;
-    public void CreateMesh()
-    {
+
+    private void SpawnCube(Vector3 position) {
+        GameObject g = Instantiate(cube, position, Quaternion.identity);
+        Color color = new Color((float)Math.Sqrt((position.x / bound + 1) / 2), (float)Math.Sqrt((position.y / bound + 1) / 2), (float)Math.Sqrt((position.z / bound + 1) / 2));
+
+        g.GetComponent<MeshRenderer>().material.color = color;
+        lastCubes.Add(g);
+    }
+    private void CreateMesh() {
         mesh.Clear();
         colors.Clear();
         mesh.vertices = points.ToArray();
-        print(points.Capacity);
-        print(mesh.vertexCount);
-        for (int i = 0; i < mesh.vertexCount; i++)
-        {
+//        print(points.Capacity);
+//        print(mesh.vertexCount);
+        for (int i = 0; i < mesh.vertexCount; i++) {
             magnitude = points[i].magnitude;
-            value = (float)Math.Sqrt(3 * MathF.Pow(bound,2))/2;
+            value = (float)Math.Sqrt(3 * MathF.Pow(bound, 2)) / 2;
             //colors.Add(gradient.Evaluate(magnitude / 2.598f));
             colors.Add(new Color((float)Math.Sqrt((points[i][0] / bound + 1) / 2), (float)Math.Sqrt((points[i][1] / bound + 1) / 2), (float)Math.Sqrt((points[i][2] / bound + 1) / 2)));
             //colors.Add(new Color((magnitude / value)/1.5f, (1 - (magnitude / value))/1.5f, MathF.Sqrt((points[i][1]/bound+1)/2)));

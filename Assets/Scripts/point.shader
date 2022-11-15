@@ -57,7 +57,7 @@ Shader "Point Cloud/Point"
             #if _COMPUTE_BUFFER
                 float4 pt = _PointBuffer[vid];
                 float4 pos = mul(_Transform, float4(pt.xyz, 1));
-                half r = (data      ) & 0xff;
+                half r = (data >>) & 0xff;
                 half g = (data >>  8) & 0xff;
                 half b = (data >> 16) & 0xff;
                 half a = (data >> 24) & 0xff;

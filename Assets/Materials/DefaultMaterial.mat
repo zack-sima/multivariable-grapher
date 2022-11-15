@@ -9,8 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: DefaultMaterial
   m_Shader: {fileID: 4800000, guid: d74273d066d6846058e73750bb85b41e, type: 3}
-  m_ValidKeywords:
-  - _DISTANCE_ON
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 0
