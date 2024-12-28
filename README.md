@@ -1,6 +1,6 @@
 # Multivariable Grapher, AKA "freematica" (no more yearly Mathematica subscription fees!)
 
-A current project with @Eric Brewster to replace the clunky online interfaces for graphing 3d equations. Supports implicit graphing. The program works by approximating the left and right sides of an equation (substituting x, y, and z values) until they are roughly equivalent, and deciphers the equations using a custom-built equation parser with a linked-list-like structure.
+A current project with Eric Brewster to replace the clunky online interfaces for graphing 3d equations. Supports implicit graphing. The program works by approximating the left and right sides of an equation (substituting x, y, and z values) until they are roughly equivalent, and deciphers the equations using a custom-built equation parser with a recursive structure.
 
 [Unity version 2021.3.3f1]
 
@@ -15,7 +15,7 @@ Plane:
 Curves:
 <img width="1440" alt="3" src="https://user-images.githubusercontent.com/68410154/201023330-85d0e1e1-2784-4a5f-aa78-ba0f242558dd.png">
 
-Thicc curves:
+Bigger curves:
 <img width="1440" alt="4" src="https://user-images.githubusercontent.com/68410154/201023341-4f6c3c98-47b2-4661-afdd-926f41d3626a.png">
 
 Smooth rug:
